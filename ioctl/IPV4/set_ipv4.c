@@ -10,10 +10,35 @@
 #include <errno.h>
 #include <fcntl.h> 
 #include <unistd.h>
+#include <errno.h>
 
 #define SET_DEV_UP 1
 #define SET_DEV_DOWN 0
+/*
+static int get_ipv4_ip_mask(char* dev, char *addr, char *mask)
+{
+    int rv = 0;
+    int sockfd = 0;
+    struct sockaddr_in *sin;
+    char *ip = NULL;
+    struct ifreq ifr;
+    memset(&ifr, 0, sizeof(ifr));
+    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0){
+        return -1;
+    }
+ 
+    strcpy(ifr.ifr_name,dev);
+    rv = ioctl(sockfd, action, &ifr);
+    if(rv == 0){
+        sin = (struct sockaddr_in *)&ifr.ifr_addr;
+        ip = inet_ntoa(sin->sin_addr);
+        strcpy(addr, ip);
+    }
 
+    close(sockfd);
+    return rv;
+}
+*/
 static int set_iface_flag(char * dev, int action)
 {
     int rv = 0;
@@ -41,65 +66,64 @@ static int set_iface_flag(char * dev, int action)
     return rv;
 }
 
-static int set_ipv4_addr(char *dev, char *addr, int action)
-{
-    int sfd = 0;
-    int rv = 0;
-    struct ifreq ifr;
-    struct sockaddr_in sin;
-
-    memset(&ifr, 0, sizeof(ifr));
-    memset(&sin, 0, sizeof(sin));
-    if(addr[0] == '\0'){
-        return -1;
-    }
-    sfd = socket(AF_INET, SOCK_DGRAM, 0);
-    strcpy(ifr.ifr_name, dev);
-    sin.sin_family = AF_INET;
-    inet_pton(AF_INET, addr, &(sin.sin_addr));
-    memcpy(&ifr.ifr_addr, &sin, sizeof(struct sockaddr));
-    rv = ioctl(sfd, action, &ifr);
-    close(sfd);
-    return rv;
-}
-
-static int set_ipv4_mask(char *dev, char *addr)
+static int set_ipv4_addr_mask(char *dev, char *addr, char *mask)
 {
     int sockfd = 0;
     int rv = 0;
     struct ifreq ifr;
     struct sockaddr_in sin;
 
+    if(addr[0] == '\0' || mask[0] == '\0'){
+        fprintf(stdout, "[error]: Invalid parameter\n");
+        return -1;
+    }
+    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+
+    // set ipv4 addr
     memset(&ifr, 0, sizeof(ifr));
     memset(&sin, 0, sizeof(sin));
     strcpy(ifr.ifr_name, dev);
-
-    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
     sin.sin_family = AF_INET;
-    rv = inet_pton(AF_INET, addr, &(sin.sin_addr));
-    if (rv != 1){
-        printf("Invalid address\n");
-        return -1;
+    inet_pton(AF_INET, addr, &(sin.sin_addr));
+    memcpy(&ifr.ifr_addr, &sin, sizeof(struct sockaddr));
+    rv = ioctl(sockfd, SIOCSIFADDR, &ifr);
+    printf("SIOCSIFADDR rv:%d\n",rv);
+    /*
+    if((ioctl(sockfd, SIOCSIFADDR, &ifr)) != 0){
+        fprintf(stderr, "[error]:SIOCSIFADDR: %s\n",strerror(errno));
+        return 1;
     }
-    memcpy((char *)&ifr.ifr_addr, (char *)&sin, sizeof(struct sockaddr));
+    */
+
+    // set ipv4 mask
+    memset(&ifr, 0, sizeof(ifr));
+    memset(&sin, 0, sizeof(sin));
+    strcpy(ifr.ifr_name, dev);
+    sin.sin_family = AF_INET;
+    inet_pton(AF_INET, mask, &(sin.sin_addr));
+    memcpy(&ifr.ifr_netmask, &sin, sizeof(struct sockaddr));
     rv = ioctl(sockfd, SIOCSIFNETMASK, &ifr);
+    printf("SIOCSIFNETMASK rv:%d\n",rv);
     close(sockfd);
-    return rv;
+    return 0;
 }
+
+
 
 int main()
 {
     int rv = 0;
     char ethname[] = "docker0";
-    char ipv4_addr[] = "10.70.70.111";
-    char ipv4_mask[] = "255.255.2556.0";
+    char ipv4_addr[] = {0};
+    char ipv4_mask[] = "255.255.0.0";
+    char ip[125] = {0};
+    char mask[125] = {0};
 
     //set_iface_flag(ethname, SET_DEV_UP);
-    set_ipv4_mask(ethname, ipv4_mask);
+    set_ipv4_addr_mask(ethname, "10.70.74.11", "255.255.24a0.0");
 
-    //set_ipaddr(ethname, ipv4_addr, SIOCSIFADDR);
-    //set_ipaddr(ethname, ipv4_mask, SIOCSIFNETMASK); 
 
+    //get_ipv4_ip_mask(ethname, ip, mask)
     //get_addr(ethname, ipv4_addr, SIOCGIFADDR);
     //get_addr(ethname, ipv4addr_mask, SIOCGIFNETMASK);
 
