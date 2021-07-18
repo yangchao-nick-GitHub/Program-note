@@ -220,7 +220,7 @@ int main()
 
     //get_ipv4_ip_mask(ethname, ip, mask);
 
-    //set_ipv4_gateway(ethname, gateway);
+    set_ipv4_gateway(ethname, gateway);
 
     return 0;
 
