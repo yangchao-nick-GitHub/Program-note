@@ -134,6 +134,69 @@ tmpfs           391M     0  391M   0% /run/user/0
 /dev/sdb1       9.8G   37M  9.3G   1% /yangchao
 ```
 
+取消挂载： umount /yangchao
+
+挂载分区前最好使用fsck 强制修复磁盘，防止挂载失败
+
+##### 创建交换分区
+ 创建交换分区可以解决物理内存不足导致程序无法运行的问题，也就是说，物理内存不够用时，可以用swap分区来顶替
+1.修改分区类型
+fdisk /dev/sdb
+```
+➜  ~ fdisk /dev/sdb
+
+Welcome to fdisk (util-linux 2.34).
+Changes will remain in memory only, until you decide to write them.
+Be careful before using the write command.
+
+
+Command (m for help): p
+Disk /dev/sdb: 40 GiB, 42949672960 bytes, 83886080 sectors
+Disk model: VMware Virtual S
+Units: sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disklabel type: dos
+Disk identifier: 0x3818f521
+
+Device     Boot    Start      End  Sectors Size Id Type
+/dev/sdb1           2048 20973567 20971520  10G 83 Linux
+/dev/sdb2       20973568 41945087 20971520  10G 83 Linux
+/dev/sdb3       41945088 83886079 41940992  20G  5 Extended
+/dev/sdb5       41947136 52432895 10485760   5G 83 Linux
+/dev/sdb6       52434944 62920703 10485760   5G 83 Linux
+/dev/sdb7       62922752 83886079 20963328  10G 83 Linux
+
+Command (m for help): t
+Partition number (1-3,5-7, default 7): 7
+Hex code (type L to list all codes): 82
+
+Changed type of partition 'Linux' to 'Linux swap / Solaris'.
+
+Command (m for help):w
+```
+2.使用mkswap格式化swap分区
+```
+➜  ~ mkswap /dev/sdb7
+Setting up swapspace version 1, size = 10 GiB (10733219840 bytes)
+no label, UUID=6a7ea6d6-5780-4c1e-89ed-945b79b9f163
+```
+3.使用swapon /dev/sdb7 开启swap分区
+
+##### 查看分区使用情况
+free 命令主要是用来查看内存和 swap 分区的使用情况的
+```
+free
+              total        used        free      shared  buff/cache   available
+Mem:        4000692     1578368      896140        3828     1526184     2163396
+Swap:       2097148           0     2097148
+```
+total：是指总数；
+used：是指已经使用的；
+free：是指空闲的；
+shared：是指共享的；
+buffers：是指缓冲内存数；
+cached：是指缓存内存数，单位是KB
 
 
 
