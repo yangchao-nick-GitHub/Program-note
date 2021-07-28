@@ -206,5 +206,75 @@ cached：是指缓存内存数，单位是KB
 
 
 ## 逻辑卷管理
-
+需要安装lvm2软件
 使用逻辑卷管理的好处：可以动态分配挂载的文件系统的空间
+
+
+物理卷（Physical Volume，PV）：就是真正的物理硬盘或分区。
+卷组（Volume Group，VG）：将多个物理卷合起来就组成了卷组。组成同一个卷组的物理卷可以是同一块硬盘的不同分区，也可以是不同硬盘上的不同分区。我们可以把卷组想象为一块逻辑硬盘。
+逻辑卷（Logical Volume，LV）：卷组是一块逻辑硬盘，硬盘必须分区之后才能使用，我们把这个分区称作逻辑卷。逻辑卷可以被格式化和写入数据。我们可以把逻辑卷想象为分区。
+
+从低层到上层：
+1.先将一个或多个分区或者硬盘组成物理卷（PV）
+2.将一个或多个物理卷组成卷组（VG）
+3.对卷组进行分区，分区就是逻辑卷（LV）
+
+#### 创建PV
+pvcreate /dev/sdb2    创建sdb硬盘的分区2为物理卷
+pvcreate /dev/sdc	   创建磁盘C为物理卷
+pvdisplay / pvs   查看创建的物理卷
+
+#### 创建VG
+vgcreate vg1  /dev/sdb2  /dev/sdc  把物理卷/dev/sdb2  /dev/sdc 合并成一个卷组，卷组名定义为vg1 
+vgdisplay / vgs 查看创建的卷组
+
+#### 创建LV 
+选项：
+-L	指定逻辑卷大小，单位MB，GB,TB
+-n	指定逻辑卷名
+lvcreate  -L  5G   -n LV1  vg1
+lvdisplay / lvs 查看逻辑卷信息，对对应的 LV path 进行目录挂载
+
+然后格式化逻辑卷，并挂载目录
+df -h 可以看到逻辑分区建立的文件系统名字变成了  /dev/mapper/vg1-LV1
+
+#### LVM 的扩容操作
+传统标准分区扩容需要格式化分区，数据无法保存，LVM 扩容不需要
+扩容思路：
+ 	  加入逻辑卷挂载的目录假如需要扩容，看上层卷组空间是否够
+假如卷组不够，假如卷组容量不够，就需要扩充卷组，就的增加物理卷容量
+
+#### 卷组扩容
+增加了几块物理卷后，我们开始扩充卷组
+vgextend vg1 /dev/sdb3 /dev/sdd   扩充卷组
+
+#### LV 扩容
+lvextern -L +30G /dev/vg/LV1   有+ 原有 增加xxxG
+lvextern -L  30G /dev/vg/LV1   无+ 容量改变到xxxG
+ 此时df  -h 还不能看到新增加的磁盘容量，需要执行
+
+
+#### LVM 的缩减操作
+xfs 文件系统不支持缩减，ext4才支持
+
+#### LV的缩减
+1.umount 文件系统
+2.缩减文件系统  resize2fs /dev/vg1/LV1 -4G
+3.运行磁盘检查 fsck -f /dev/vg1/LV1
+4.再次执行 resize2fs /dev/vg1/LV1 -4G
+4.缩减LV   lvreduce /dev/vg1/LV1  -L -4G    # -4G 表示减少多少 4G 表示减少到多少 
+
+
+#### VG的缩减
+1.umount 文件系统
+2. #pvdisplay 查看， 将/dev/sdd 从vg1中移除  vgreduce vg1 /dev/sdd（把物理卷移除卷组）
+3.再次查看PV情况
+
+#### LVM的删除
+删除逻辑卷   lvremove 逻辑卷的设备文件名
+
+常见命令说明
+lvcreate 可以直接使用  -l  ，例如lvcreate -l 100%VG -n lv_3 vg_1 ， 创建一个占全部卷组大小的lv，并指定名字为lv_3（注意前提是vg并没有创建有lv）
+
+创建一个空闲空间80%大小的lv，并指定名字为lv_4(常用)
+lvcreate -l 80%Free -n lv_4 vg_1
