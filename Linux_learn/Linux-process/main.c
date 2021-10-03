@@ -68,7 +68,7 @@ void function4()
 
 /*************************************************
 Function: function5
-Description: 一共有三个进程，A打印三次
+Description: A打印6次
 *************************************************/
 void function5()
 {
@@ -80,6 +80,36 @@ void function5()
     }
 }
 
+/*************************************************
+Function: function5
+Description: A打印6次
+*************************************************/
+void function6()
+{
+    char buffer[256] = {0};
+    pid_t pid = fork();
+    FILE *fp = NULL;
+    fp = fopen("./123.txt","r");
+    if (fp == NULL){
+        perror("open file error");
+    }
+
+    if (pid < 0){
+        perror("fork error");
+    }else if (pid == 0){
+        fread(buffer,256,1,fp);
+        fprintf(stdout,"buffer : %s",buffer);
+        fclose(fp);
+        ;
+    }else if (pid > 0){
+        fread(buffer,256,1,fp);
+        fprintf(stdout,"buffer : %s",buffer);
+        fclose(fp);
+        ;
+    }
+    
+}
+
 int main()
 {
     //function1();
@@ -87,5 +117,8 @@ int main()
     //function3();
     //function4();
     //function5();
+    function6();
+
+
     return 0;
 }
