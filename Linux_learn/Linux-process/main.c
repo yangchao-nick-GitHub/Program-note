@@ -110,6 +110,13 @@ void function6()
     
 }
 
+    
+
+void function7()
+{
+  
+}
+
 int main()
 {
     //function1();
@@ -117,7 +124,8 @@ int main()
     //function3();
     //function4();
     //function5();
-    function6();
+    //function6();
+    function7();
 
 
     return 0;
