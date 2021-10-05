@@ -35,7 +35,7 @@ void fread_demo()
         if (feof(fp)){
             break;
         }
-        size_t s = fread(buffer,strlen(),1,fp);
+        size_t s = fread(buffer,strlen(msg),1,fp);
         
         if (s > 0){
             fprintf(stdout,"read file : %s\n",buffer);
@@ -56,13 +56,15 @@ void func3()
     const char *msg2="hello write\n";
     printf("%s",msg0);
     fwrite(msg1,strlen(msg1),1,stdout);
-    write(1,msg)
+    write(1,msg2,strlen(msg2));
+    fork();
 }
 
 
 int main()
 {
-    fwrite_demo();
-    fread_demo();
+    //fwrite_demo();
+    //fread_demo();
+    func3();
     return 0;
 }
